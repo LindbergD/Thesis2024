@@ -14,11 +14,6 @@ class base_Model(nn.Module):
             configs.final_out_channels = 128
             configs.features_len = 127
             configs.num_classes = 5
-
-        Kernel/filters are matrices that slide over the input image to extract features.
-        The stride determines how large those slides will be, stride=1 means the kernel window moves one pixel at a time.
-        If necessary, padding modifies the input such that the kernel window fits, e.g. by adding 0's.
-
         """
         
         # Applies 32 kernels of size 25,
