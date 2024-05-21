@@ -36,10 +36,6 @@ class TC(nn.Module):
         # randomly select the number of features to construct the context vectors
         t_samples = torch.randint(seq_len-self.timestep, size=(1,)).long().to(self.device)
         # >> (1), contains a single random number in range [0, 77]
-        # Let t_samples=77, as t_samples+self.timestep<=seq_len == 77+50<=128 holds true.
-        # 77+50=127
-        # (t_samples + i) will begin at 78, and go up to (t_samples + 50)=127
-        # That means we will be predicting from index 78 to index 127 which is perfect.
         
         # Holds source features that will be predicted
         encode_samples = torch.empty((self.timestep, batch, self.num_channels)).float().to(self.device)
@@ -66,9 +62,8 @@ class TC(nn.Module):
             total = torch.mm(encode_samples[i], torch.transpose(pred[i], 0, 1))
             # >> (128, 128), (Batch, Batch)
             nce += torch.sum(torch.diag(self.lsoftmax(total)))
-        
-        # Average over batches and timesteps | This is not in accordance with info NCE loss
-        nce /= -1 * batch * self.timestep  # identical to:  nce = -nce/(batch*self.timestep)
+        # Average over batches and timesteps
+        nce /= -1 * batch * self.timestep  
         return nce, self.projection_head(contextual)
         # self.projection_head(.) is the nonlinear projection head before the NT-XENT contrastive loss
     
