@@ -71,14 +71,13 @@ np.random.seed(SEED) # Sets the seed for numpy operations
 random.seed(SEED)
 #####################################################
 
-# os.path.join(.) will take strings as inputs and concatenate them into one appropriate path, using separators of the operating system being used (i.e. is portable across devices)
 if fine_tune_strategy == "partition":
     experiment_log_dir = os.path.join(logs_save_dir, experiment_description, run_description, f"{data_type}")
 else:
     experiment_log_dir = os.path.join(logs_save_dir, experiment_description, run_description, training_mode + f"_seed_{SEED}")
 
 # --> will return a path such as: "C:\Users\denna\ThesisCode\logs_save_dir\experiment_description\run_description\training_mode + f"_seed_{SEED}""
-os.makedirs(experiment_log_dir, exist_ok=True) # Creates the dictionary with path name above, makes all intermediate dictionaries. exist_ok=True allows for existing dictionaries to be overwritten
+os.makedirs(experiment_log_dir, exist_ok=True)
 
 # Logging
 # To keep track of the experiment and be able to uncover any bugs/mistakes in the code
@@ -91,7 +90,6 @@ logger.debug(f'Mode:    {training_mode}')
 logger.debug("=" * 45)
 
 # Load datasets
-# data_path = f".\data\{data_type}"
 data_path = os.path.join(".", "data", data_type)
 
 train_dl, valid_dl, test_dl = data_generator(data_path, configs, training_mode, logger) # See function in dataloader.py
@@ -151,7 +149,7 @@ if training_mode == "train_linear" or "tl" in training_mode:
 if training_mode == "random_init":
     model_dict = model.state_dict()
 
-    # Delete all the parameters except for logits <<<<<<<<<<<<< This is not what appears to be happening here
+    # Delete all the parameters except for logits
     del_list = ['logits']
     pretrained_dict_copy = model_dict.copy()
     for i in pretrained_dict_copy.keys():
@@ -160,7 +158,6 @@ if training_mode == "random_init":
                 del model_dict[i]
     
     set_requires_grad(model, model_dict, requires_grad=False)  # Freeze everything except last layer.
-
 
 
 model_optimizer = torch.optim.Adam(model.parameters(), lr=configs.lr, betas=(configs.beta1, configs.beta2), weight_decay=3e-4)
@@ -174,7 +171,6 @@ if training_mode == "self_supervised":
 Trainer(model, temporal_contr_model, model_optimizer, temporal_contr_optimizer, train_dl, valid_dl, test_dl, device, logger, configs, experiment_log_dir, training_mode)
 
 
-# ------ Changed dataset to validation to avoid overfitting to test set during experimentation ------- #
 if training_mode != "self_supervised":
     # Test model, generate classification report and confusion matrix
     outs = model_evaluate(model, temporal_contr_model, valid_dl, device, training_mode)
