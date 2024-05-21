@@ -28,14 +28,8 @@ class NTXentLoss(torch.nn.Module):
         # Ones begin to appear in cell (128, 128), and then go down (129, 129), (130, 130), ..., (256, 256)
         l2 = np.eye((2 * self.batch_size), 2 * self.batch_size, k=self.batch_size)
         # Ones begin to appear in cell (0, 128), and then go down (1, 129), (2, 130), ..., (128, 256)
-
-        # print(l1[128, 0], l1[129, 1], l1[130, 2], l1[255, 127])
-
         mask = torch.from_numpy((diag + l1 + l2))
-
         mask = (1 - mask).type(torch.bool)
-        
-        
         return mask.to(self.device)
 
     @staticmethod
@@ -88,34 +82,3 @@ class NTXentLoss(torch.nn.Module):
         loss = self.criterion(logits, labels) # calls cross entropy
 
         return loss / (2 * self.batch_size)
-
-    def forward_revised(self, zis, zjs):
-        """
-        zis contain the normal samples, and zjs are the augmented equivalents.
-        Take one positive pair, and treat all other 2(N-1) samples as negative.
-
-        I could use the (128, 127, 128) feature vectors output straight from the encoder, and compare
-        similarity across the latent timesteps.
-        
-        source_data = (batches, features, channels)
-        aug_data = (batches, features, channels)
-
-        for batch_idx in num_batches:
-            for feature_idx in num_features:
-                cosine_similarity(source_data[batch_idx, feature_idx, :], aug_data[batch_idx, feature_idx, :])
-                    # >> Return the cosine similarity between two posittive samples feature vectors for a selected timestep
-        
-        # >> (128, 127) matrix, where each entry is the cosine similarity between two positive batches for a certain timestep
-        Now average across timesteps (127 columns) to obtain an average cosine similarity between positive batches
-        # >> (128,)
-
-
-        Can flatten out the encoded version;  (128, 127, 128) -> (128, 127*128) -> (128, 16256)
-        Then compute cosine similarity on those vectors. Skeptical about the idea of having N 16256-dimensional vectors
-
-
-
-
-
-        """
-        return 0
