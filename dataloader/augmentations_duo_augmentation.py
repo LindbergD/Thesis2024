@@ -133,22 +133,6 @@ def bandstop_filter(x, *args):
 
     return torch.tensor(recovered_signal).unsqueeze(0)
 
-    # Select a random center between 0 and 31hz. Remove frequencies in a window of width = 5
-    # https://hal.science/hal-03853329/document for center
-    # https://proceedings.mlr.press/v136/mohsenvand20a.html for window size 5
-    
-    # width = 5
-    # center_freq = np.random.uniform(low=0, high=31)
-
-    # # Contruct a mask to remove frequencies in the range
-    # low, high = center_freq-(width/2), center_freq+(width/2)
-
-    # filter_mask = np.ones(fft_result.shape[1])
-    # filter_mask[(freqs >= low) & (freqs <= high)] = 0
-    # filter_mask[(freqs <= -low) & (freqs >= -high)] = 0
-    # # Apply mask
-    # fft_result_filtered = fft_result_filtered*filter_mask
-
 def determine_augmentation_set(config, logger):
     if config.run_description == "gaussian_gaussian":
         logger.debug("Selected gaussian-gaussian")
