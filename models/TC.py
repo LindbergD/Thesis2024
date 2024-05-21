@@ -49,14 +49,7 @@ class TC(nn.Module):
         for i in np.arange(1, self.timestep + 1):
             encode_samples[i - 1] = z_source[:, t_samples + i, :].view(batch, self.num_channels)
             # >> (50, 128, 128) contains 50 features to be predicted 
-        
-        # print(encode_samples[0, 6, :].square().sum().sqrt())
-            # >> returns 1, which indicates that the feature vectors are normalized to be unit vectors
-        
-        # The first feature to be predicted in the first batch:
-            # encode_samples[0, 0, :]
-            #   equivalent to z_aug2[0, t_samples+1, :]
-        
+                
         # Create the contextual vectors using attention module
         c_aug = self.seq_transformer(forward_seq_aug)
         c_source = self.seq_transformer(forward_seq_source)
@@ -69,66 +62,13 @@ class TC(nn.Module):
             linear = self.Wk[i]   # (64, 128) log-bilinear model
             pred[i] = linear(c_aug)
         
-        # Normalize predictions - encode_samples are already normalized
-        if self.normalize_preds:
-            pred = nn.functional.normalize(pred, dim=-1)
-        # print(pred[0, 33, :].square().sum().sqrt())
-        
-        """
-        # total = torch.mm(encode_samples[i], torch.transpose(pred[i], 0, 1))
-        # torch.mm[(Batch, Channels), (Channels, Batch)] = (Batch, Batch)
-        
-        # Every batch encodes feature i with a 128-D vector
-        # Every row is a batch
-        # Every column is a channel value
-
-        #   encode_samples[i]:
-        # [ [1, 2, 3, ..., 128]     : batch 1
-        #   [1, 2, 3, ..., 128]     : batch 2
-        #   [1, 2, 3, ..., 128]     : batch 3
-        #   ...................
-        #   [1, 2, 3, ..., 128] ]   : batch 128    
-
-        # Every batch still encodes a feature i
-        # But every column is a batch
-        # Every row is a single channel's value across all batches
-
-        #   transpose(pred[i]):
-        # [ [1, 1, 1, ..., 1]       : channel 1
-        #   [2, 2, 2, ..., 2]       : channel 2
-        #   [3, 3, 3, ..., 3]       : channel 3
-        #   ...................
-        # [128, 128, 128, ..., 128] ] : channel 128
-
-        # Matrix multiplication will now construct a new (128, 128) matrix by multiplying the channel values of batches
-        # All channel values of batch 1 are multiplied by their equivalent versions and summed up into a single scalar value
-            # When two channel values (from the different matrices) have large values their product will be large and cause a large total sum
-        # Each matrix entry (i,j), encodes the channel-wise similarity between batch i and j.
-        # Positive pairs are those of the same batch, therefore the diagonal accesses the positive pairs.
-        
-        # total[0, :] returns the similarity between predicted channel values and actual channel values of the first batch and all 128 batches.
-        # total[14, 19] returns the similarity between predicted and actual channel values of batch 14 and 19.
-
-        # ?? PROBLEM: ??
-            # If actual channel values and predicted channel values have small values, they will produce small products!
-            # Therefore we're not really incentivizing similarity between predictions but just high-magnitude channel values??
-        # Explanation:
-            # The idea is to minimize the dot product between positive batches, and maximize dot product between negative.
-            # Small values on the diagonals (positive samples) will result in smaller loss.
-            
-        # nce += torch.sum(torch.diag(self.lsoftmax(total)))
-        # self.lsoftmax first applies softmax - all rows sum up to 1, each value in range 0 to 1
-            #  Then applies log, all values are made negative and larger in magnitude 
-
-        """
-
         nce = 0
         for i in np.arange(0, self.timestep):
             total = torch.mm(encode_samples[i], torch.transpose(pred[i], 0, 1))
             # >> (128, 128), (Batch, Batch)
             nce += torch.sum(torch.diag(self.lsoftmax(total)))
         
-        # Average over batches and timesteps | This is not in accordance with info NCE loss
-        nce /= -1 * batch * self.timestep  # identical to:  nce = -nce/(batch*self.timestep)
+        # Average over batches and timesteps 
+        nce /= -1 * batch * self.timestep
         return nce, self.projection_head(c_source), self.projection_head(c_aug)
         # self.projection_head(.) is the nonlinear projection head before the NTXENT contrastive loss
