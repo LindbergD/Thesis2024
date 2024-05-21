@@ -61,14 +61,6 @@ def Trainer(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, t
         torch.save(nt_xent_losses, save_path_nt_xent)
         torch.save(nce_losses, save_path_nce)
 
-    # ------- Removed during experimentation to avoid risk of overfitting to the test set ------- # 
-        
-    # # Evaluate model on the test set (not applicable to self-supervised training)
-    # if training_mode != "self_supervised":
-    #     logger.debug('\nEvaluate on the Test set:')
-    #     test_loss, test_acc, _, _ = model_evaluate(model, temporal_contr_model, test_dl, device, training_mode)
-    #     logger.debug(f'Test loss      :{test_loss:0.4f}\t | Test Accuracy      : {test_acc:0.4f}')
-
     logger.debug("\n################## Training is Done! #########################")
 
 
